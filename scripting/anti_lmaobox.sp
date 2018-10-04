@@ -4,6 +4,7 @@
 #include <morecolors>
 
 Handle adt_array;
+bool bBeenWarned[MAXPLAYERS+1] = {false, ...};
 
 public OnPluginStart()
 {
@@ -17,6 +18,16 @@ public OnPluginStart()
 	{
 		SetFailState("Could not find a cheat spam messages file.");
 	}
+}
+
+public OnClientAuthorized(int client)
+{
+	bBeenWarned[client] = false;
+}
+
+public OnClientDisconnect(int client)
+{
+	bBeenWarned[client] = false;
 }
 
 void InitAntiSpam(char[] path)
@@ -49,25 +60,34 @@ void InitAntiSpam(char[] path)
 public void OnPlayerSay(Handle event, char[] name, bool dontBroadcast)
 {
 	int userid = GetEventInt(event, "userid");
+	int caClient = GetClientOfUserId(userid);
 	char msg[186];
 	GetEventString(event, "text", msg, sizeof(msg));
 	
 	for(int i = 0; i < GetArraySize(adt_array); ++i)
 	{
-		char arrayString[186];
-		GetArrayString(adt_array, i, arrayString, sizeof(arrayString));
+			char arrayString[186];
+			GetArrayString(adt_array, i, arrayString, sizeof(arrayString));
 		
-		if(StrEqual(msg, arrayString, false))
-		{
-			ServerCommand("sm_ban #%i 40320 Cheat spam", userid);
+			if(StrEqual(msg, arrayString, false))
+			{
+				if(!bBeenWarned[caClient])
+				{
+					CPrintToChat(caClient, "{red}WARNING: {white}The message you sent above is considered cheat spam. If you send it again, you will be banned.");
+					bBeenWarned[caClient] = true;
+				}
+				else
+				{
+					ServerCommand("sm_ban #%i 40320 Cheat spam", userid);
 		
-			char name2[128];
-			GetClientName(GetClientOfUserId(userid), name2, sizeof(name2));
+					char name2[128];
+					GetClientName(caClient, name2, sizeof(name2));
 			
-			CPrintToChatAll("{red}THE BAN HAMMER HAS BANISHED %s!", name2);
-			CPrintToChatAll("{red}THE BAN HAMMER HAS BANISHED %s!", name2);
-			CPrintToChatAll("{red}THE BAN HAMMER HAS BANISHED %s!", name2);
-			CPrintToChatAll("{red}THE BAN HAMMER HAS BANISHED %s!", name2);
-		}
+					CPrintToChatAll("{red}THE BAN HAMMER HAS BANISHED %s!", name2);
+					CPrintToChatAll("{red}THE BAN HAMMER HAS BANISHED %s!", name2);
+					CPrintToChatAll("{red}THE BAN HAMMER HAS BANISHED %s!", name2);
+					CPrintToChatAll("{red}THE BAN HAMMER HAS BANISHED %s!", name2);
+				}
+			}
 	}
 }
